@@ -2,6 +2,7 @@ package auth
 
 import (
 	"encoding/json"
+	"errors"
 	"strconv"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 
 type Service interface {
 	GenerateToken(userID int) (string, error)
+	ValidateToken(encodetoken string) (*jwt.Token, error)
 }
 
 type jwtService struct {
@@ -34,4 +36,18 @@ func (s *jwtService) GenerateToken(userID int) (string, error) {
 		return signedToken, err
 	}
 	return signedToken, nil
+}
+
+func (s *jwtService) ValidateToken(encodetoken string) (*jwt.Token, error) {
+	token, err := jwt.Parse(encodetoken, func(token *jwt.Token) (interface{}, error) {
+		_, ok := token.Method.(*jwt.SigningMethodHMAC)
+		if !ok {
+			return nil, errors.New("invalid token")
+		}
+		return []byte(signKey), nil
+	})
+	if err != nil {
+		return token, err
+	}
+	return token, nil
 }
