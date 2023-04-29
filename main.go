@@ -1,6 +1,7 @@
 package main
 
 import (
+	"ardi_go/auth"
 	"ardi_go/handler"
 	"ardi_go/user"
 	"fmt"
@@ -25,8 +26,9 @@ func main() {
 	// DB = db
 	userRepository := user.NewRepository(db)
 	userService := user.NewService(userRepository)
+	authService := auth.NewService()
 
-	userHandler := handler.NewUseHandler(userService)
+	userHandler := handler.NewUseHandler(userService, authService)
 	router := gin.Default()
 
 	api := router.Group("api/v1")

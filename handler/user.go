@@ -1,8 +1,10 @@
 package handler
 
 import (
+	"ardi_go/auth"
 	"ardi_go/helper"
 	"ardi_go/user"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -10,10 +12,11 @@ import (
 
 type userHandler struct {
 	userService user.Service
+	authService auth.Service
 }
 
-func NewUseHandler(userService user.Service) *userHandler {
-	return &userHandler{userService}
+func NewUseHandler(userService user.Service, authService auth.Service) *userHandler {
+	return &userHandler{userService, authService}
 }
 func (h *userHandler) RegisterUser(c *gin.Context) {
 	var input user.RegisterUserInput
@@ -33,8 +36,13 @@ func (h *userHandler) RegisterUser(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, respon)
 		return
 	}
-	formatter := user.FormatUser(newUser, "tokentoken")
-	//token, err:= h.jwtService. GenerateToken()
+	token, err := h.authService.GenerateToken(newUser.ID)
+	if err != nil {
+		respon := helper.APIResponse("Register account failed", http.StatusBadRequest, "error", err.Error())
+		c.JSON(http.StatusBadRequest, respon)
+		return
+	}
+	formatter := user.FormatUser(newUser, token)
 
 	respon := helper.APIResponse("Account has been registered", http.StatusOK, "success", formatter)
 
@@ -62,7 +70,14 @@ func (h *userHandler) Login(c *gin.Context) {
 		return
 	}
 
-	formatter := user.FormatUser(loggedinUser, "tokentoken")
+	token, err := h.authService.GenerateToken(loggedinUser.ID)
+	if err != nil {
+		respon := helper.APIResponse("Login failed", http.StatusBadRequest, "error", err.Error())
+		c.JSON(http.StatusBadRequest, respon)
+		return
+	}
+
+	formatter := user.FormatUser(loggedinUser, token)
 	respon := helper.APIResponse("Succesfuly Loggedin", http.StatusOK, "success", formatter)
 
 	c.JSON(http.StatusOK, respon)
@@ -112,7 +127,11 @@ func (h *userHandler) UploadAvatar(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, response)
 		return
 	}
-	path := "images/" + file.Filename
+
+	//dapat dari jwt
+	userID := 1
+
+	path := fmt.Sprintf("images/%d-%s", userID, file.Filename)
 
 	err = c.SaveUploadedFile(file, path)
 	if err != nil {
@@ -123,8 +142,6 @@ func (h *userHandler) UploadAvatar(c *gin.Context) {
 		return
 	}
 
-	//dapat dari jwt
-	userID := 2
 	_, err = h.userService.SaveAvatar(userID, path)
 	if err != nil {
 		data := gin.H{"is_uploaded": false}
