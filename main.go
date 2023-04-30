@@ -2,6 +2,7 @@ package main
 
 import (
 	"ardi_go/auth"
+	"ardi_go/campaign"
 	"ardi_go/handler"
 	"ardi_go/user"
 	"fmt"
@@ -22,9 +23,22 @@ func main() {
 	}
 	fmt.Println("Connection to Database is good")
 
-	// db.AutoMigrate(&entity.User{})
+	// db.AutoMigrate(&campaign.CampaignImage{})
 	// DB = db
 	userRepository := user.NewRepository(db)
+	campaignRepository := campaign.NewRepository(db)
+	campaigns, err := campaignRepository.FindByUserId(1)
+
+	fmt.Println("debug")
+	fmt.Println(len(campaigns))
+	for _, campaign := range campaigns {
+		fmt.Println(campaign.Name)
+		fmt.Println("jumlah gambar")
+		fmt.Println(len(campaign.CampaignImages))
+		fmt.Println(campaign.CampaignImages[0].FileName)
+
+	}
+
 	userService := user.NewService(userRepository)
 	authService := auth.NewService()
 
