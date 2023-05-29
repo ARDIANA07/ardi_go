@@ -43,7 +43,7 @@ func (s *service) Login(input LoginInput) (User, error) {
 	email := input.Email
 	password := input.Password
 
-	//mencocokan user by emai
+	//mencocokan user by email
 	user, err := s.repository.FindByEmail(email)
 	if err != nil {
 		return user, err
